@@ -85,9 +85,9 @@ def test_place_combatant_out_of_bounds_raises():
 
 def test_wall_top_surface_and_mode_requires_support_are_exported_from_scene_package():
     """The branch's main import surface — the two symbols a consumer actually
-    needs to call — must be importable from `kirby_combat.scene`, matching
+    needs to call — must be importable from `kirby_world`, matching
     every other scene symbol's export."""
-    import kirby_combat.scene as scene_pkg
+    import kirby_world as scene_pkg
 
     assert "wall_top_surface" in scene_pkg.__all__
     assert "mode_requires_support" in scene_pkg.__all__
@@ -98,7 +98,7 @@ def test_wall_top_surface_and_mode_requires_support_are_exported_from_scene_pack
 def test_is_climbable_is_exported_from_scene_package():
     """whole-branch review MINOR 3: the consuming service needs
     `is_climbable`, same as `wall_top_surface`/`mode_requires_support`."""
-    import kirby_combat.scene as scene_pkg
+    import kirby_world as scene_pkg
 
     assert "is_climbable" in scene_pkg.__all__
     assert callable(scene_pkg.is_climbable)

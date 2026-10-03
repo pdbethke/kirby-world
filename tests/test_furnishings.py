@@ -128,14 +128,14 @@ def _lot(furnishings) -> Scene:
 class TestYouCannotStandInsideIt:
     def test_the_scene_says_the_ground_is_taken(self):
         """The question a line could never answer."""
-        from kirby_combat.scene.placement import blocked_by_furnishing
+        from kirby_world.occupancy import blocked_by_furnishing
 
         scene = _lot([WAGON])
         assert blocked_by_furnishing(scene, Position(2.0, 1.0, 0.0)) is WAGON
         assert blocked_by_furnishing(scene, Position(6.0, 1.0, 0.0)) is None
 
     def test_something_you_can_walk_through_does_not_block(self):
-        from kirby_combat.scene.placement import blocked_by_furnishing
+        from kirby_world.occupancy import blocked_by_furnishing
 
         smoke = Furnishing(id="s", name="Smoke", polygon_xy=WAGON.polygon_xy,
                            height_m=2.0, pd=0, ed=0, body=1,
@@ -146,7 +146,7 @@ class TestYouCannotStandInsideIt:
         """A man on top of a wagon is above its height, not inside it ---
         the same distinction `supporting_surfaces` already draws for wall
         tops."""
-        from kirby_combat.scene.placement import blocked_by_furnishing
+        from kirby_world.occupancy import blocked_by_furnishing
 
         assert blocked_by_furnishing(
             _lot([WAGON]), Position(2.0, 1.0, 1.5)) is None

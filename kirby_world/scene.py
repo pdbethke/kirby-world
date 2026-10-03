@@ -6,7 +6,6 @@ from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
-    from kirby_combat.encounter import Encounter
     from kirby_world.construct import Construct
 
 
@@ -397,7 +396,11 @@ class Scene:
     # five occupants doing chores -- has no Encounter at all; this is that
     # normal, resting state, not an omission. Set only when the scene needs
     # Segment-level accounting (a fight, a car chase, a rocket countdown).
-    encounter: "Encounter | None" = None
+    #
+    # Typed `object`, not Encounter: the clock belongs to whoever keeps it
+    # (kirby-combat's `Encounter`), and a place does not import the fight.
+    # Nothing here reads it; the place only carries it.
+    encounter: object | None = None
 
     def __post_init__(self) -> None:
         """Project every furnishing's footprint into `walls`.

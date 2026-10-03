@@ -11,7 +11,7 @@ driver hydration on the next step.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Iterable, Literal
+from typing import Iterable, Literal, Mapping
 
 from kirby_world.scene import Position, Wall, Hazard
 from kirby_world.geometry import point_in_polygon_xy
@@ -190,34 +190,7 @@ def construct_from_hazard(hazard: Hazard) -> Construct:
     )
 
 
-def damage_taken(session, obj_id: str) -> int:
-    """BODY this construct has lost so far in this fight.
-
-    `Construct` is frozen and its own contract says so: "a Construct's
-    `body` is the CURRENT body for one resolution; damage flows out as
-    events and back via DRIVER HYDRATION on the next step." The driver was
-    kirby-api. When the turn loop became the driver it never hydrated, and
-    every shot landed on a brand new building --- the Harwood House took
-    0, 2, 6 and 0 BODY across four shots against a BODY of 8 and reported
-    `destroyed=False` every time. Nothing could ever be knocked down.
-
-    Folded from the log, absolute rather than a delta, like every other
-    fold in this engine.
-    """
-    total = 0
-    for event in list(getattr(session, "event_log", None) or []):
-        if getattr(event, "kind", "") != "ActionResolved":
-            continue
-        payload = getattr(event, "result_payload", None) or {}
-        if payload.get("target_id") != obj_id:
-            continue
-        if payload.get("kind") not in ("attack_construct", "throw_object"):
-            continue
-        total += int(payload.get("body_dealt", 0) or 0)
-    return total
-
-
-def constructs_in(scene, session=None) -> list[Construct]:
+def constructs_in(scene, damage: Mapping[str, int] | None = None) -> list[Construct]:
     """Everything in this scene that an attack can be aimed AT.
 
     The authored constructs, plus every authored `Wall` projected through
@@ -234,6 +207,11 @@ def constructs_in(scene, session=None) -> list[Construct]:
     Walls stay in `scene.walls` as well: movement and line of sight read
     them there, and this is a second VIEW of the same geometry rather than
     a second copy of it.
+
+    `damage` is BODY already lost, by `obj_id`. A place does not know what
+    happened to it --- the fight that did the damage keeps that ledger
+    (kirby-combat folds it from its event log) and hands the totals in.
+    Without it these are the constructs as authored.
     """
     out = list(getattr(scene, "constructs", None) or [])
     seen = {getattr(c, "obj_id", None) for c in out}
@@ -274,15 +252,15 @@ def constructs_in(scene, session=None) -> list[Construct]:
             continue
         out.append(construct_from_wall(wall))
 
-    # HYDRATION. Without a fight in hand these are the buildings as
-    # authored, which is what every caller that has no session wants.
-    if session is not None:
+    # HYDRATION. Without a damage ledger these are the buildings as
+    # authored, which is what every caller that has no fight wants.
+    if damage is not None:
         hydrated = []
         for c in out:
             if c.body is None:
                 hydrated.append(c)
                 continue
-            left = max(0, c.body - damage_taken(session, c.obj_id))
+            left = max(0, c.body - int(damage.get(c.obj_id, 0)))
             # RUBBLE IS NOT A BUILDING. A destroyed construct used to stay
             # in the scene and be knocked over again --- the Harwood House
             # came down on Tom McLaury, Frank McLaury and Billy Clanton,
