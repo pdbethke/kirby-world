@@ -2,11 +2,18 @@
 from __future__ import annotations
 
 from kirby_world import (
-    AmbientConditions, Position, Scene, SceneBounds, Wall,
+    AmbientConditions,
+    Position,
+    Scene,
+    SceneBounds,
+    Wall,
 )
 from kirby_world.geometry import line_of_sight_clear
 from kirby_world.visibility import (
-    _dist, _nearest_point_on_segment, nearest_hidden_point, nearest_visible_point,
+    _dist,
+    _nearest_point_on_segment,
+    nearest_hidden_point,
+    nearest_visible_point,
 )
 
 

@@ -1,11 +1,15 @@
 """Hazard trigger detection tests."""
-import pytest
 
 from kirby_world import (
-    Scene, SceneBounds, Hazard, HazardEffect, Position, AmbientConditions,
+    AmbientConditions,
+    Hazard,
+    HazardEffect,
+    Position,
+    Scene,
+    SceneBounds,
 )
 from kirby_world.hazards import (
-    compute_hazard_triggers, HazardTriggerResult,
+    compute_hazard_triggers,
 )
 
 

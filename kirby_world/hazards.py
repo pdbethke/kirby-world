@@ -4,11 +4,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from kirby_world.scene import Hazard, HazardEffect, Position, Scene
 from kirby_world.geometry import (
-    point_in_polygon_xy, path_crosses_polygon,
+    path_crosses_polygon,
+    point_in_polygon_xy,
 )
-
+from kirby_world.scene import HazardEffect, Position, Scene
 
 TriggerReason = Literal["entered", "passed_through", "in_zone_during_tick"]
 
@@ -47,8 +47,7 @@ def compute_hazard_triggers(
 
     for hazard in scene.hazards:
         affected: list[str] = []
-        for cid in combatant_positions_after.keys():
-            after_pos = combatant_positions_after[cid]
+        for cid, after_pos in combatant_positions_after.items():
             if not _within_elevation(after_pos.z, hazard.elevation_range_m):
                 continue
             after_inside = point_in_polygon_xy(

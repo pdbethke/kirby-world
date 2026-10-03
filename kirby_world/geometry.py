@@ -1,10 +1,10 @@
 """3D geometry utilities for scene queries."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 from math import atan2, sqrt
-from typing import Iterable
 
-from kirby_world.scene import Position, Wall, Surface
+from kirby_world.scene import Position, Surface, Wall
 
 
 def distance_3d(a: Position, b: Position) -> float:
@@ -76,10 +76,8 @@ def _on_segment(a: tuple[float, float], b: tuple[float, float], p: tuple[float, 
     cross = (p[0] - a[0]) * (b[1] - a[1]) - (p[1] - a[1]) * (b[0] - a[0])
     if abs(cross) > 1e-9:
         return False
-    if min(a[0], b[0]) - 1e-9 <= p[0] <= max(a[0], b[0]) + 1e-9 and \
-       min(a[1], b[1]) - 1e-9 <= p[1] <= max(a[1], b[1]) + 1e-9:
-        return True
-    return False
+    return (min(a[0], b[0]) - 1e-9 <= p[0] <= max(a[0], b[0]) + 1e-9
+            and min(a[1], b[1]) - 1e-9 <= p[1] <= max(a[1], b[1]) + 1e-9)
 
 
 def segments_intersect_xy(
@@ -109,7 +107,7 @@ def path_crosses_polygon(
 def segment_intersection_xy(
     a1: tuple[float, float], a2: tuple[float, float],
     b1: tuple[float, float], b2: tuple[float, float],
-) -> "tuple[float, float] | None":
+) -> tuple[float, float] | None:
     """Compute the (x, y) intersection point of segments a1a2 and b1b2, or
     None if they are parallel or do not intersect."""
     x1, y1 = a1
@@ -141,7 +139,7 @@ def wall_height_blocks(target_z: float, wall: Wall) -> bool:
     return base <= target_z < top
 
 
-def first_blocking_wall(from_: Position, to: Position, walls: Iterable[Wall]) -> "Wall | None":
+def first_blocking_wall(from_: Position, to: Position, walls: Iterable[Wall]) -> Wall | None:
     """Return the LoS-blocking wall nearest to `from_` that breaks the from_->to
     line, or None if LoS is clear.
 
@@ -180,8 +178,8 @@ def first_blocking_wall(from_: Position, to: Position, walls: Iterable[Wall]) ->
 
 
 def first_blocking_surface(
-    from_: Position, to: Position, surfaces: "Iterable[Surface] | None",
-) -> "Surface | None":
+    from_: Position, to: Position, surfaces: Iterable[Surface] | None,
+) -> Surface | None:
     """Return a solid floor that the from_->to ray passes through, or None.
 
     Surfaces were never consulted for LoS: `has_line_of_sight` passed only

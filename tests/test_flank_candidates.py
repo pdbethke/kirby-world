@@ -5,8 +5,8 @@ The original generator placed every flank candidate on the ray from the
 target through a wall ENDPOINT, so the sightline back to the target grazed
 that corner and `segments_intersect_xy`'s strict-CCW test resolved it on
 floating-point rounding rather than geometry."""
-from kirby_world.scene import Position, Wall
 from kirby_world.geometry import line_of_sight_clear
+from kirby_world.scene import Position, Wall
 from kirby_world.visibility import _shadow_candidates
 
 WALL = Wall(

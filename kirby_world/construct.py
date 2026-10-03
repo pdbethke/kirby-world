@@ -10,11 +10,12 @@ driver hydration on the next step.
 """
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
-from typing import Iterable, Literal, Mapping
+from typing import Literal
 
-from kirby_world.scene import Position, Wall, Hazard
 from kirby_world.geometry import point_in_polygon_xy
+from kirby_world.scene import Hazard, Position, Wall
 
 EffectKind = Literal["damage", "suffocation", "status", "mental"]  # "mental" reserved (v1: not resolved)
 EffectGating = Literal["physical_def", "breathing_swimming", "mental_disbelief", "none"]
@@ -104,20 +105,20 @@ class Construct:
 def construct_from_spawn_spec(
     *,
     obj_id: str,
-    kind: "ConstructKind",
-    segment: "tuple[Position, Position] | None" = None,
-    polygon_xy: "list[tuple[float, float]] | None" = None,
-    elevation_range_m: "tuple[float, float]" = (0.0, 0.0),
+    kind: ConstructKind,
+    segment: tuple[Position, Position] | None = None,
+    polygon_xy: list[tuple[float, float]] | None = None,
+    elevation_range_m: tuple[float, float] = (0.0, 0.0),
     height_m: float = 0.0,
-    def_value: "int | None" = None,
-    body: "int | None" = None,
-    effect: "ConstructEffect | None" = None,
-    permeability: "Permeability | None" = None,
-    source_combatant_id: "str | None" = None,
-    created_at_seq: "int | None" = None,
-    sense_group: "str | None" = None,
+    def_value: int | None = None,
+    body: int | None = None,
+    effect: ConstructEffect | None = None,
+    permeability: Permeability | None = None,
+    source_combatant_id: str | None = None,
+    created_at_seq: int | None = None,
+    sense_group: str | None = None,
     creator_immune: bool = False,
-) -> "Construct":
+) -> Construct:
     """Build a spawned Construct (force wall / spawn-on-destroy hazard). A
     force_wall defaults to a LoS+movement blocking impermeable barrier; a
     hazard_zone defaults to porous. the driver computes def/body/geometry from the
@@ -136,7 +137,7 @@ def construct_from_spawn_spec(
     )
 
 
-def constructs_containing(pos: "Position", constructs: "Iterable[Construct]") -> "list[Construct]":
+def constructs_containing(pos: Position, constructs: Iterable[Construct]) -> list[Construct]:
     """Return constructs whose polygon contains `pos` in xy within their elevation
     range (segment constructs are never 'containing' a point)."""
     out: list[Construct] = []

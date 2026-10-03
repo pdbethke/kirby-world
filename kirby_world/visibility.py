@@ -6,12 +6,12 @@ are derived analytically from occluder shadow geometry, then VERIFIED with the
 real LoS test — exact, not sampled."""
 from __future__ import annotations
 
-from kirby_world.scene import Position, Scene, Surface, Wall
-from kirby_world.geometry import first_blocking_wall, line_of_sight_clear
 from kirby_world.falling import is_supported_at
+from kirby_world.geometry import first_blocking_wall, line_of_sight_clear
 from kirby_world.movement_legality import (
     _nearest_point_on_segment_xy as _nearest_point_on_segment,
 )
+from kirby_world.scene import Position, Scene, Surface, Wall
 
 _EPS = 0.5  # metres past a shadow edge / above a wall top
 

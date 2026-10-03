@@ -34,15 +34,15 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from kirby_world.scene import Position, Scene, Wall, is_climbable
+from kirby_world.falling import FallingResult, is_supported_at, resolve_fall
 from kirby_world.geometry import (
     distance_3d,
     point_in_polygon_xy,
-    segments_intersect_xy,
     segment_intersection_xy,
+    segments_intersect_xy,
     wall_height_blocks,
 )
-from kirby_world.falling import is_supported_at, resolve_fall, FallingResult
+from kirby_world.scene import Position, Scene, Wall, is_climbable
 
 _EPS = 1e-6
 _FALL_COMBATANT_ID = "mover"   # default; overridden by movement_reach(combatant_id=)
@@ -83,7 +83,7 @@ def mode_requires_support(mode: str) -> bool:
 class MovementOutcome:
     reachable: bool
     landing: Position
-    fall: "FallingResult | None" = None
+    fall: FallingResult | None = None
 
 
 def _xy_distance(a: Position, b: Position) -> float:
@@ -141,7 +141,7 @@ def _first_blocking_wall_xy(
 
 def _maybe_fall(
     landing: Position, scene: Scene, combatant_id: str = _FALL_COMBATANT_ID
-) -> "FallingResult | None":
+) -> FallingResult | None:
     if is_supported_at(landing, scene):
         return None
     return resolve_fall(
@@ -222,7 +222,7 @@ def _running(
     # elevation legality (you physically can't reach across it).
     blocker = _first_blocking_wall_xy(from_pos, to_pos, scene, from_pos.z)
     if blocker is not None:
-        wall, impact = blocker
+        _wall, impact = blocker
         dist_to_wall = _xy_distance(from_pos, impact)
         if dist_to_wall <= distance_m + _EPS:
             # Stop just before the wall (clamp to within reach if the wall is
@@ -354,8 +354,11 @@ def _noteleport_blocked(
     boundary within their elevation range — the "englobing" case: teleporting
     from inside to outside (or across) is refused."""
     import math as _math
+
     from kirby_world.geometry import (
-        path_crosses_polygon, point_in_polygon_xy, segment_intersection_xy,
+        path_crosses_polygon,
+        point_in_polygon_xy,
+        segment_intersection_xy,
     )
     for c in (getattr(scene, "constructs", None) or []):
         lv = int(getattr(c, "no_teleport_levels", 0) or 0)

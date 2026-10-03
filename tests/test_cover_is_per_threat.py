@@ -23,11 +23,14 @@ the offer quotes.
 """
 from __future__ import annotations
 
-import pytest
-
 from kirby_world.cover import cover_available, cover_breakdown
 from kirby_world.scene import (
-    AmbientConditions, Position, Scene, SceneBounds, Surface, Wall,
+    AmbientConditions,
+    Position,
+    Scene,
+    SceneBounds,
+    Surface,
+    Wall,
 )
 
 
@@ -64,7 +67,7 @@ def test_the_breakdown_says_how_many_it_covers():
     scene = _scene()
     here = Position(10.0, 0.0, 0.0)
     threats = [Position(0.0, 0.0, 0.0), Position(10.0, 10.0, 0.0)]
-    spot, level = cover_available(scene.walls[0], here, threats, scene)
+    spot, _level = cover_available(scene.walls[0], here, threats, scene)
     covered, total = cover_breakdown(scene.walls[0], spot, threats, scene)
     assert (covered, total) == (1, 2)
 

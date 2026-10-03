@@ -1,15 +1,16 @@
 """3D geometry utilities for scene queries."""
+from math import pi
+
 import pytest
-from math import pi, sqrt
 
 from kirby_world import Position, Wall
 from kirby_world.geometry import (
+    angle_between_xy,
     distance_3d,
+    line_of_sight_clear,
+    path_crosses_polygon,
     point_in_polygon_xy,
     segments_intersect_xy,
-    line_of_sight_clear,
-    angle_between_xy,
-    path_crosses_polygon,
 )
 
 
@@ -113,7 +114,7 @@ def test_angle_north_is_half_pi():
 
 
 def test_first_blocking_wall_picks_nearest_and_respects_height():
-    from kirby_world import Wall, Position
+    from kirby_world import Position, Wall
     from kirby_world.geometry import first_blocking_wall, line_of_sight_clear
     a, b = Position(-10, 0, 0), Position(10, 0, 0)
     low = Wall(id="low", name="low", segment=(Position(0, -5, 0), Position(0, 5, 0)),

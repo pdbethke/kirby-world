@@ -95,7 +95,7 @@ class Wall:
         return self.def_value if self.ed_value is None else self.ed_value
 
 
-def is_climbable(obj: "Wall | Surface") -> bool:
+def is_climbable(obj: Wall | Surface) -> bool:
     """True when `obj` declares any climbability at all (6E1 p70).
 
     `climb_difficulty is None` means no handholds exist — sheer glass, a force
@@ -298,7 +298,7 @@ class Furnishing:
     #: projection idempotent — see `Scene.__post_init__`.
     EDGE_ID = "{id}#edge{n}"
 
-    def as_walls(self) -> list["Wall"]:
+    def as_walls(self) -> list[Wall]:
         """This footprint as the wall segments its edges already are.
 
         TWELVE MODULES ASK `scene.walls` about movement, line of sight,
@@ -386,11 +386,11 @@ class Scene:
     hazards: list[Hazard]
     ambient: AmbientConditions
     combatant_positions: dict[str, Position] = field(default_factory=dict)
-    constructs: list["Construct"] = field(default_factory=list)
+    constructs: list[Construct] = field(default_factory=list)
     #: Solid things standing on the ground, described by their FOOTPRINT
     #: rather than by a line --- a wagon, a barrel stack, a boulder. See
     #: `Furnishing` for the three defects a line could not avoid.
-    furnishings: list["Furnishing"] = field(default_factory=list)
+    furnishings: list[Furnishing] = field(default_factory=list)
     # 6E2 p.8, "COMBAT AND NONCOMBAT TIME": precise (Segment-level) time is
     # only tracked when a sequence needs it. A Scene at rest -- a house,
     # five occupants doing chores -- has no Encounter at all; this is that
@@ -462,7 +462,7 @@ class Scene:
                 out.append(strip)
         return out
 
-    def with_position(self, combatant_id: str, position: Position) -> "Scene":
+    def with_position(self, combatant_id: str, position: Position) -> Scene:
         """THE WHAT-IF BOARD: this scene with one body somewhere else.
 
         Not a move --- nothing that calls this is changing where anybody
@@ -486,7 +486,7 @@ class Scene:
                                  combatant_id: position},
         )
 
-    def snapshot(self) -> "Scene":
+    def snapshot(self) -> Scene:
         """This Scene with a COPY of where everybody is standing.
 
         `combatant_positions` is a mutable dict by this class's own
@@ -501,7 +501,7 @@ class Scene:
         """
         return replace(self, combatant_positions=dict(self.combatant_positions))
 
-    def place_combatant(self, combatant_id: str, position: Position) -> "Scene":
+    def place_combatant(self, combatant_id: str, position: Position) -> Scene:
         """Return a new Scene with the combatant positioned.
 
         Raises ValueError if the position is outside the scene bounds on any axis.

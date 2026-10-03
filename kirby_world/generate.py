@@ -33,8 +33,14 @@ import random
 from dataclasses import dataclass
 
 from kirby_world.scene import (
-    AmbientConditions, Hazard, HazardEffect, Position, Scene, SceneBounds,
-    Surface, Wall,
+    AmbientConditions,
+    Hazard,
+    HazardEffect,
+    Position,
+    Scene,
+    SceneBounds,
+    Surface,
+    Wall,
 )
 
 #: How close to a wall segment counts as "inside" it, in metres.

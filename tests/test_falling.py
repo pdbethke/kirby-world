@@ -1,12 +1,11 @@
 """Falling — support check + damage + landing."""
-import pytest
 
-from kirby_world import Scene, SceneBounds, Surface, Position, AmbientConditions
+from kirby_world import AmbientConditions, Position, Scene, SceneBounds, Surface
 from kirby_world.falling import (
-    is_supported_at,
-    compute_falling_damage,
-    resolve_fall,
     FallingResult,
+    compute_falling_damage,
+    is_supported_at,
+    resolve_fall,
 )
 
 

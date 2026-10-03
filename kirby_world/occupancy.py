@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from kirby_world.scene import Furnishing, Position, Scene
 
 
-def position_of(scene: "Scene | None", combatant_id: str) -> "Position | None":
+def position_of(scene: Scene | None, combatant_id: str) -> Position | None:
     """Where a combatant is standing, or ``None`` if they are not on the map.
 
     Not on the map is not the same as at the origin --- a combatant with no
@@ -24,7 +24,7 @@ def position_of(scene: "Scene | None", combatant_id: str) -> "Position | None":
     return (getattr(scene, "combatant_positions", None) or {}).get(combatant_id)
 
 
-def blocked_by_furnishing(scene: "Scene", pos: "Position") -> "Furnishing | None":
+def blocked_by_furnishing(scene: Scene, pos: Position) -> Furnishing | None:
     """The Furnishing standing on that spot, or None.
 
     THE QUESTION A LINE COULD NEVER ANSWER. Scenery was a `Wall` --- a

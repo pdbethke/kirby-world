@@ -1,10 +1,15 @@
 """Derived wall-top strips — the standable-structures half of the
 supported-vantages spec (§1)."""
+from kirby_world.falling import is_supported_at, resolve_fall
 from kirby_world.scene import (
-    AmbientConditions, Position, Scene, SceneBounds, Surface, Wall,
+    AmbientConditions,
+    Position,
+    Scene,
+    SceneBounds,
+    Surface,
+    Wall,
     wall_top_surface,
 )
-from kirby_world.falling import is_supported_at, resolve_fall
 
 GROUND = Surface(
     id="g", name="ground",

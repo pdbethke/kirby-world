@@ -9,8 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from kirby_world.scene import Position, Scene, Surface
 from kirby_world.geometry import point_in_polygon_xy
+from kirby_world.scene import Position, Scene, Surface
 
 
 @dataclass(frozen=True)

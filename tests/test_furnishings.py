@@ -109,8 +109,12 @@ class TestWhatItDoesToASightLine:
 # ---------------------------------------------------------------------------
 # What it changes. A type nothing consults is scenery for the reader.
 # ---------------------------------------------------------------------------
-from kirby_world.scene import (           # noqa: E402
-    AmbientConditions, Position, Scene, SceneBounds, Surface,
+from kirby_world.scene import (
+    AmbientConditions,
+    Position,
+    Scene,
+    SceneBounds,
+    Surface,
 )
 
 

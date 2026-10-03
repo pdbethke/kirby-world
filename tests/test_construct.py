@@ -1,13 +1,22 @@
 """Unified Construct model (spec 2026-06-09 §1.1)."""
 from kirby_world import (
-    Scene, SceneBounds, Wall, Hazard, HazardEffect, Position, AmbientConditions,
-    Construct, ConstructEffect, construct_from_wall, construct_from_hazard,
+    AmbientConditions,
+    Construct,
+    Hazard,
+    HazardEffect,
+    Position,
+    Scene,
+    SceneBounds,
+    Wall,
+    construct_from_hazard,
+    construct_from_wall,
 )
 
 
 def _wall(**kw):
-    base = dict(id="w1", name="wall", segment=(Position(0, 0, 0), Position(0, 10, 0)),
-                height_m=2.0, blocks_los=True, blocks_movement=True, cover_level=4, body=8)
+    base = {"id": "w1", "name": "wall", "segment": (Position(0, 0, 0), Position(0, 10, 0)),
+            "height_m": 2.0, "blocks_los": True, "blocks_movement": True, "cover_level": 4,
+            "body": 8}
     base.update(kw)
     return Wall(**base)
 
@@ -69,8 +78,8 @@ def test_constructs_containing_point():
 
 
 def test_construct_from_spawn_spec_builds_force_wall():
-    from kirby_world.construct import construct_from_spawn_spec
     from kirby_world import Position
+    from kirby_world.construct import construct_from_spawn_spec
     c = construct_from_spawn_spec(
         obj_id="fw1", kind="force_wall",
         segment=(Position(0, 0, 0), Position(0, 4, 0)), height_m=3.0,

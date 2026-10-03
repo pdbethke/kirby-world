@@ -32,7 +32,7 @@ print("ok")
 
 
 def test_a_house_with_occupants_needs_no_fight_engine():
-    res = subprocess.run([sys.executable, "-c", PROBE], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "-c", PROBE], capture_output=True, text=True, check=False)
     assert res.returncode == 0 and res.stdout.strip() == "ok", res.stderr
 
 
@@ -40,7 +40,7 @@ def test_the_block_would_notice_an_import():
     """Guards the guard: the block must really make the import fail."""
     res = subprocess.run(
         [sys.executable, "-c", 'import sys; sys.modules["kirby_combat"] = None; import kirby_combat'],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     )
     assert res.returncode != 0 and "ModuleNotFoundError" in res.stderr
 

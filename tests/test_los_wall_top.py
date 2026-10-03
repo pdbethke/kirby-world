@@ -1,6 +1,6 @@
 """LoS at exactly the wall top (supported-vantages spec §2)."""
-from kirby_world.scene import Position, Wall
 from kirby_world.geometry import line_of_sight_clear
+from kirby_world.scene import Position, Wall
 
 # URBAN_ROOFTOP's stone_wall, verbatim.
 WALL = Wall(

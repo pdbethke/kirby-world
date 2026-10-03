@@ -29,12 +29,13 @@ Algorithm for ``compute_cover_level`` (scene analysis):
 """
 from __future__ import annotations
 
-from kirby_world.scene import Position, Scene, Wall, Surface
 from kirby_world.geometry import (
-    distance_3d, first_blocking_wall, point_in_polygon_xy,
+    distance_3d,
+    first_blocking_wall,
+    point_in_polygon_xy,
     segments_intersect_xy,
 )
-
+from kirby_world.scene import Position, Scene, Surface, Wall
 
 # Per 6E2 p45 §BEHIND COVER MODIFIERS — discrete percent-of-target-covered
 # buckets map to OCV penalties. Each tuple is (max_percent_in_bucket, ocv_mod).

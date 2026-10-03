@@ -3,16 +3,16 @@
 Brick is 5 PD and 10 ED. Until this change the engine held ONE def_value,
 so Gorgon's fist and Cheshire's Energy Blast met the same number.
 """
-from kirby_world.scene import Position, Wall
 from kirby_world.construct import construct_from_wall
+from kirby_world.scene import Position, Wall
 
 
 def _wall(**kw) -> Wall:
-    base = dict(
-        id="w1", name="brick wall",
-        segment=(Position(x=0.0, y=0.0, z=0.0), Position(x=5.0, y=0.0, z=0.0)),
-        height_m=4.0,
-    )
+    base = {
+        "id": "w1", "name": "brick wall",
+        "segment": (Position(x=0.0, y=0.0, z=0.0), Position(x=5.0, y=0.0, z=0.0)),
+        "height_m": 4.0,
+    }
     base.update(kw)
     return Wall(**base)
 

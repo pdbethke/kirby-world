@@ -1,8 +1,12 @@
 """Cover resolution tests."""
-import pytest
 
 from kirby_world import (
-    Scene, SceneBounds, Surface, Wall, Position, AmbientConditions,
+    AmbientConditions,
+    Position,
+    Scene,
+    SceneBounds,
+    Surface,
+    Wall,
 )
 from kirby_world.cover import compute_cover_level, cover_ocv_modifier
 

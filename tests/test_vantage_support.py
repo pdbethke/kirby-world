@@ -6,14 +6,21 @@ ground<->rooftop lines of fire.
 """
 import pytest
 
-from kirby_world.scene import (
-    AmbientConditions, Position, Scene, SceneBounds, Surface, Wall,
-)
 from kirby_world.falling import is_supported_at
 from kirby_world.geometry import line_of_sight_clear
 from kirby_world.movement_legality import mode_requires_support
+from kirby_world.scene import (
+    AmbientConditions,
+    Position,
+    Scene,
+    SceneBounds,
+    Surface,
+    Wall,
+)
 from kirby_world.visibility import (
-    _surface_candidates, nearest_hidden_point, nearest_visible_point,
+    _surface_candidates,
+    nearest_hidden_point,
+    nearest_visible_point,
 )
 
 ROOFTOP = Position(0.0, 13.0, 6.0)     # rooftop

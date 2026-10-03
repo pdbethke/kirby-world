@@ -15,7 +15,10 @@ import math
 import random
 
 from kirby_world.generate import (
-    ArenaUnplaceable, _near_segment, arena_for, generate_arena,
+    ArenaUnplaceable,
+    _near_segment,
+    arena_for,
+    generate_arena,
 )
 from kirby_world.scene import Scene
 

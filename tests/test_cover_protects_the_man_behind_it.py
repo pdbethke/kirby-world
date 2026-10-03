@@ -29,7 +29,12 @@ from __future__ import annotations
 
 from kirby_world.cover import compute_cover_level
 from kirby_world.scene import (
-    AmbientConditions, Position, Scene, SceneBounds, Surface, Wall,
+    AmbientConditions,
+    Position,
+    Scene,
+    SceneBounds,
+    Surface,
+    Wall,
 )
 
 

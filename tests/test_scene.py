@@ -2,8 +2,14 @@
 import pytest
 
 from kirby_world import (
-    Scene, SceneBounds, Surface, Wall, Hazard, Position, AmbientConditions,
+    AmbientConditions,
+    Hazard,
     HazardEffect,
+    Position,
+    Scene,
+    SceneBounds,
+    Surface,
+    Wall,
 )
 
 
