@@ -1,0 +1,38 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+*.egg-info/
+.idea/
+.vscode/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+build/
+
+# Any venv variant, not just the exact name .venv — a renamed one
+# slipped past and could put large directories into a commit.
+.venv*/
+
+.superpowers/
+
+# ── Book-derived corpora are never committed ──────────────────────────
+# A HERO Designer file is a machine-readable build, and the published ones
+# are paid Hero Games content -- committing them redistributes stat blocks.
+# PeterB, 2026-09-06: "never publish that ledger" / "keep them local".
+#
+# Deliberately broad and unanchored: a .hdc dropped in a scratch directory is
+# the same problem as one under tests/. kirby-cost settled this first and
+# carries explicit negations for the three characters PeterB authored
+# himself; nothing here is meant to be an exception.
+*.hdc
+*.hdp
+*.hdt
+
+# Exported corpora -- power_library projections, character dumps. Ids, names
+# and numbers may live in a PRIVATE module; the ledger and its rulebook prose
+# never leave the machine.
+*power_library*.json
+*power_library*.sql

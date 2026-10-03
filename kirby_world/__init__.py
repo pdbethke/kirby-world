@@ -1,0 +1,20 @@
+"""Scene — 3D terrain and environmental context for combat."""
+from kirby_world.scene import (
+    Scene, SceneBounds, Surface, Wall, Hazard, HazardEffect,
+    Position, AmbientConditions, wall_top_surface, is_climbable,
+)
+from kirby_world.construct import (
+    Construct, ConstructEffect, construct_from_wall, construct_from_hazard,
+    constructs_in,
+    construct_from_spawn_spec, constructs_containing,
+)
+from kirby_world.movement_legality import mode_requires_support
+
+__all__ = [
+    "Scene", "SceneBounds", "Surface", "Wall", "Hazard", "HazardEffect",
+    "Position", "AmbientConditions", "wall_top_surface", "is_climbable",
+    "Construct", "ConstructEffect", "construct_from_wall", "construct_from_hazard",
+    "constructs_in",
+    "construct_from_spawn_spec", "constructs_containing",
+    "mode_requires_support",
+]

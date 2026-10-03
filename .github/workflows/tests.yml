@@ -1,0 +1,26 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install package + dev deps
+        run: pip install -e .[dev]
+      - name: Lint
+        run: ruff check .
+      - name: Run tests
+        # Everything here runs offline with no fixtures and no configuration.
+        # If this suite ever needs an environment variable, something that is
+        # not a place has moved into the package.
+        run: pytest -q --tb=short --cov=kirby_world --cov-report=term-missing
