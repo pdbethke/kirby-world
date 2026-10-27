@@ -53,9 +53,13 @@ def test_falling_damage_formula_6e_one_d6_per_2m():
     assert compute_falling_damage(fall_distance_m=1) == 0   # less than 2m — no damage
 
 
-def test_falling_damage_capped_at_20d6_for_terminal_velocity():
-    assert compute_falling_damage(fall_distance_m=100) == 20
-    assert compute_falling_damage(fall_distance_m=1000) == 20
+def test_long_falls_take_velocity_at_impact_to_30d6():
+    # Long Falls take the velocity at impact (6E2 p.142's Falling Table):
+    # 10, 30, 60, 100, 150, 210 m fallen by the end of Segments 1-6.
+    assert compute_falling_damage(fall_distance_m=21) == 10    # lands at 20m/Segment
+    assert compute_falling_damage(fall_distance_m=100) == 20   # lands at 40m/Segment
+    assert compute_falling_damage(fall_distance_m=150) == 25   # the book's 50m velocity: 25d6
+    assert compute_falling_damage(fall_distance_m=1000) == 30  # 60m/Segment maximum: 30d6
 
 
 def test_resolve_fall_from_rooftop_to_ground():
