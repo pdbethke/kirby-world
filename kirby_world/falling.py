@@ -1,9 +1,9 @@
 """Falling — support check, falling damage, landing resolution.
 
-Note: Dorman's reference implementation does not include falling damage
-computation. The 1d6/2m + 20d6 cap formula is our interpretation per HERO 6E2;
-RAW-verify the exact cap and per-meter rate against the rulebook before
-relying on this in production.
+Falling damage is 6E2 p.142: a Short Fall (20m or less) does 1d6 per full 2m
+fallen; a Long Fall (21m or more) does 1d6 per 2m/Segment of VELOCITY at impact,
+read off the Falling Table (+10m velocity each Segment, applied before the
+move, to a 60m maximum, so a fall never does more than 30d6).
 """
 from __future__ import annotations
 
@@ -39,12 +39,32 @@ def is_supported_at(pos: Position, scene: Scene) -> bool:
     return False
 
 
+SHORT_FALL_MAX_M = 20
+GRAVITY_M_PER_SEGMENT = 10
+MAX_FALL_VELOCITY_M = 60
+
+
+def impact_velocity(fall_distance_m: float) -> int:
+    """The Falling Table (6E2 p.142): velocity in m/Segment when a fall of this
+    length strikes the ground. Gravity adds 10m each Segment before the move,
+    and velocity stops rising at 60m/Segment."""
+    velocity = fallen = 0
+    while fallen < fall_distance_m:
+        velocity = min(velocity + GRAVITY_M_PER_SEGMENT, MAX_FALL_VELOCITY_M)
+        fallen += velocity
+    return velocity
+
+
 def compute_falling_damage(fall_distance_m: float) -> int:
-    """per HERO 6E2: 1d6 normal damage per 2m fallen, cap 20d6 (terminal velocity)."""
-    if fall_distance_m < 2:
-        return 0
-    dice = int(fall_distance_m // 2)
-    return min(dice, 20)
+    """Normal Damage dice for a fall (6E2 p.142).
+
+    Short Fall (20m or less): 1d6 per full 2m fallen ("a four-story building
+    16m high would take 8d6"). Long Fall (21m or more): 1d6 per 2m/Segment of
+    velocity at impact ("hitting the ground at a velocity of 50m takes 25d6").
+    """
+    if fall_distance_m <= SHORT_FALL_MAX_M:
+        return int(fall_distance_m // 2)
+    return impact_velocity(fall_distance_m) // 2
 
 
 def _highest_supporting_surface_below(pos: Position, scene: Scene) -> Surface | None:
