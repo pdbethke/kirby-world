@@ -86,10 +86,42 @@ def test_no_cover_from_anyone_is_not_a_spot():
 def test_best_cover_across_threats_sorts_first():
     near = Wall(id="near", name="Near",
                 segment=(Position(5.0, 0.0, 0.0), Position(5.0, 10.0, 0.0)),
-                height_m=3.0, cover_level=2)
+                height_m=3.0, cover_level=2, blocks_movement=False)
     far = _wall_at_x(12.0)
     spots = cover_spots(
         _scene(walls=[near, far]),
         from_pos=HERE, threats=THREAT, reach_m=20.0, mode="running",
     )
     assert [s.feature_id for s in spots] == ["w", "near"]
+
+
+def test_the_fold_keeps_the_edge_he_can_reach():
+    # A wagon with the threat to the east and the man north of it. The
+    # nearest edge's standoff lands INSIDE the footprint (4, 1): equal
+    # cover, nearer, and unreachable. The old per-edge loop offered the
+    # west edge at (2, 0), which he can walk to; the fold must keep that.
+    wagon = Furnishing(
+        id="wagon", name="Hay wagon",
+        polygon_xy=[(3.0, -2.0), (5.0, -2.0), (5.0, 2.0), (3.0, 2.0)],
+        height_m=1.5, material="wooden wall", body=6, cover_level=3,
+    )
+    spots = cover_spots(
+        _scene(furnishings=[wagon]), from_pos=Position(4.0, 5.0, 0.0),
+        threats={"t": Position(10.0, 5.0, 0.0)}, reach_m=6.0, mode="running",
+    )
+    assert len(spots) == 1
+    assert spots[0].reachable_this_phase is True
+    assert (spots[0].position.x, spots[0].position.y) == (2.0, 0.0)
+
+
+def test_cover_he_can_reach_outranks_better_cover_he_cannot():
+    near = Wall(id="near", name="Near",
+                segment=(Position(5.0, 0.0, 0.0), Position(5.0, 10.0, 0.0)),
+                height_m=3.0, cover_level=2)
+    far = _wall_at_x(13.0)
+    spots = cover_spots(
+        _scene(walls=[near, far]),
+        from_pos=HERE, threats=THREAT, reach_m=5.0, mode="running",
+    )
+    assert [s.feature_id for s in spots] == ["near", "w"]
+    assert [s.reachable_this_phase for s in spots] == [True, False]

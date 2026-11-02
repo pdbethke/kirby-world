@@ -433,13 +433,19 @@ def cover_spots(
     return sorted(best.values(), key=_spot_order)
 
 
-def _spot_order(spot: CoverSpot) -> tuple[int, float]:
-    """RULING: best cover first, then nearest.
+def _spot_order(spot: CoverSpot) -> tuple[bool, int, float]:
+    """RULING: cover he can reach this Phase first, then best cover, then nearest.
+
+    A man is better served by cover he can reach this Phase than by better
+    cover he can only plan toward. This also decides which edge of a
+    furnishing is kept: an edge's standoff can land inside the footprint,
+    nearer and unreachable, and the old per-edge loop offered the edge he
+    could walk to --- so the fold must keep that one.
 
     "Best" is the LOWEST cover across the threats --- a spot is only as good
     as its worst angle, so a place that hides him from one gun and exposes him
     to another does not outrank one that half-covers both. Distance breaks a
-    tie. The same order decides which edge of a furnishing is kept, because
-    its edges fold to one line.
+    tie.
     """
-    return (-min(spot.cover_by_threat.values()), spot.distance_m)
+    return (not spot.reachable_this_phase, -min(spot.cover_by_threat.values()),
+            spot.distance_m)
