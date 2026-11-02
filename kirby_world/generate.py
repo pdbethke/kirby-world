@@ -31,9 +31,11 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass
+from enum import Enum
 
 from kirby_world.scene import (
     AmbientConditions,
+    Furnishing,
     Hazard,
     HazardEffect,
     Position,
@@ -51,7 +53,49 @@ PLACEMENT_ATTEMPTS = 50
 
 
 class ArenaUnplaceable(RuntimeError):
-    """A start position could not be found clear of walls and hazards."""
+    """A start position or a furnishing could not be found a clear place."""
+
+
+class ArenaGenerator(str, Enum):
+    """Which generator builds the map. REQUIRED, never defaulted.
+
+    kirby-api rebuilds every fight's map from its seed on each reload, so
+    changing what a seed builds would silently change every old fight's map.
+    The generator is therefore a version the caller names and stores beside
+    the seed, and an old fight keeps the one it started with.
+    """
+
+    #: The 0.1.1 generator, unchanged: walls, tiers, hazards and nothing to
+    #: stand behind. Held to a golden in the tests.
+    WALLS_ONLY = "walls_only"
+    #: The same draws, then furnishings placed after the start positions.
+    WITH_COVER = "with_cover"
+
+
+def _require_generator(generator) -> ArenaGenerator:
+    """A plain string is refused: the enum is the contract, not the spelling."""
+    if not isinstance(generator, ArenaGenerator):
+        raise TypeError(
+            f"generator must be an ArenaGenerator, got {generator!r}; pass "
+            f"ArenaGenerator.WALLS_ONLY or ArenaGenerator.WITH_COVER"
+        )
+    return generator
+
+
+#: Furniture a WITH_COVER arena is stocked from: (kind, OBJECT_DURABILITY
+#: material, footprint length m, footprint width m, height m). Materials are
+#: 6E2 p.173 Objects Table rows; the sizes are ours (the table has none).
+FURNISHING_KINDS: tuple[tuple[str, str, float, float, float], ...] = (
+    ("crates", "furniture, heavy wood", 1.2, 1.2, 1.2),
+    ("car", "automobile", 4.5, 1.8, 1.5),
+    ("armored_car", "armored car", 5.5, 2.2, 2.2),
+    ("barrier", "concrete wall", 3.0, 0.6, 1.0),
+    ("tree", "medium tree", 0.8, 0.8, 6.0),
+)
+
+#: How far a furnishing keeps from every start position, in metres, edge
+#: to edge: a man must not open the fight standing against his cover.
+FURNISHING_START_CLEARANCE_M = 2.0
 
 
 @dataclass(frozen=True)
@@ -123,12 +167,22 @@ def _in_polygon(p: tuple[float, float], poly: list[tuple[float, float]]) -> bool
     return inside
 
 
-def generate_arena(rng: random.Random, *, fighter_count: int) -> Arena:
+def generate_arena(rng: random.Random, *, fighter_count: int,
+                   generator: ArenaGenerator) -> Arena:
     """A new map, sized to the roster and safe to spawn into.
 
-    Deterministic for a given ``rng``: the same seed builds the same
-    arena, which is what makes a generated fight reproducible.
+    Deterministic for a given ``rng`` and ``generator``: the same seed builds
+    the same arena, which is what makes a generated fight reproducible.
+
+    ``WALLS_ONLY`` draws from ``rng`` in exactly the 0.1.1 order. ``WITH_COVER``
+    makes those same draws first and places furnishings afterwards, so it
+    adds to the 0.1.1 map and never reshuffles it.
+
+    RULING: the furnishing count is one per two fighters, at least four. It
+    is a rule of the generator, not a default, because no caller chooses it:
+    a crowd needs more to stand behind, and a duel still needs somewhere to go.
     """
+    generator = _require_generator(generator)
     h = _half_extent(fighter_count)
     name = f"random-{rng.getrandbits(24):06x}"
 
@@ -194,11 +248,15 @@ def generate_arena(rng: random.Random, *, fighter_count: int) -> Arena:
         ))
 
     starts = _start_positions(rng, fighter_count, h, walls, tiers, hazards)
+    furnishings: list[Furnishing] = []
+    if generator is ArenaGenerator.WITH_COVER:
+        furnishings = _furnishings(rng, fighter_count, h, walls, tiers, hazards, starts)
     scene = Scene(
         id=name, name=name,
         bounds=SceneBounds(-h, -h, -5.0, h, h, 20.0),
         surfaces=surfaces, walls=walls, hazards=hazards,
         ambient=AmbientConditions(), combatant_positions={},
+        furnishings=furnishings,
     )
     return Arena(scene=scene, start_positions=starts)
 
@@ -243,14 +301,101 @@ def _start_positions(rng, fighter_count, h, walls, tiers, hazards):
     return starts
 
 
-def arena_for(rng: random.Random, combatants) -> Scene:
+def _furnishing_count(fighter_count: int) -> int:
+    """One piece per two fighters, at least four (the RULING above)."""
+    return max(4, fighter_count // 2)
+
+
+def _footprint(cx: float, cy: float, length: float, width: float,
+               angle: float) -> list[tuple[float, float]]:
+    """A CCW rectangle of length x width centred on (cx, cy), turned by angle."""
+    c, s = math.cos(angle), math.sin(angle)
+    corners = [(-length / 2, -width / 2), (length / 2, -width / 2),
+               (length / 2, width / 2), (-length / 2, width / 2)]
+    return [(round(cx + x * c - y * s, 2), round(cy + x * s + y * c, 2))
+            for x, y in corners]
+
+
+def _segment_distance(p: tuple[float, float], a: tuple[float, float],
+                      b: tuple[float, float]) -> float:
+    px, py = p
+    ax, ay = a
+    bx, by = b
+    dx, dy = bx - ax, by - ay
+    if dx == 0.0 and dy == 0.0:
+        return math.hypot(px - ax, py - ay)
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
+    return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+
+
+def _polygons_overlap(a: list[tuple[float, float]], b: list[tuple[float, float]]) -> bool:
+    """Whether two footprints share ground.
+
+    Corner containment both ways, plus the centre of each: sufficient for
+    the convex, roughly-square pieces and zones placed here, and it keeps
+    this on the engine's own containment test rather than a second
+    intersection routine.
+    """
+    def centre(poly):
+        return (sum(x for x, _ in poly) / len(poly), sum(y for _, y in poly) / len(poly))
+
+    return (any(_in_polygon(p, b) for p in [*a, centre(a)])
+            or any(_in_polygon(p, a) for p in [*b, centre(b)]))
+
+
+def _furnishings(rng, fighter_count, h, walls, tiers, hazards, starts):
+    """Place the cover: crates, cars, barriers and trees on the open ground.
+
+    Each piece keeps FURNISHING_START_CLEARANCE_M from every start, off the
+    hazards and the raised tiers (a car does not stand on a rooftop drawn at
+    ground level), clear of walls and of the pieces already placed. Ids
+    follow placement order, so a seed names its furniture the same way each
+    time.
+    """
+    placed: list[Furnishing] = []
+    for i in range(_furnishing_count(fighter_count)):
+        for _attempt in range(PLACEMENT_ATTEMPTS):
+            kind, material, length, width, height = rng.choice(FURNISHING_KINDS)
+            cx, cy = rng.uniform(-h * 0.9, h * 0.9), rng.uniform(-h * 0.9, h * 0.9)
+            polygon = _footprint(cx, cy, length, width, rng.uniform(0.0, math.pi))
+            reach = math.hypot(length, width) / 2.0
+            if any(max(abs(x), abs(y)) > h for x, y in polygon):
+                continue
+            if any(math.hypot(sx - cx, sy - cy) < reach + FURNISHING_START_CLEARANCE_M
+                   for sx, sy, _z in starts):
+                continue
+            if any(_polygons_overlap(polygon, hz.polygon_xy) for hz in hazards):
+                continue
+            if any(_polygons_overlap(polygon, t.polygon_xy) for t in tiers):
+                continue
+            if any(_segment_distance((cx, cy), (w.segment[0].x, w.segment[0].y),
+                                     (w.segment[1].x, w.segment[1].y)) < reach + 0.5
+                   for w in walls):
+                continue
+            if any(_polygons_overlap(polygon, f.polygon_xy) for f in placed):
+                continue
+            placed.append(Furnishing(
+                id=f"furnishing_{i}", name=f"{kind}_{i}", polygon_xy=polygon,
+                height_m=height, material=material,
+            ))
+            break
+        else:
+            raise ArenaUnplaceable(
+                f"no clear place for furnishing {i} after {PLACEMENT_ATTEMPTS} attempts"
+            )
+    return placed
+
+
+def arena_for(rng: random.Random, combatants, *, generator: ArenaGenerator) -> Scene:
     """A generated Scene with the combatants already standing on it.
 
     The convenience a caller wants: `generate_arena` decides the ground and
     `_start_positions` decides where people begin, so putting them together
     is not a third decision.
     """
-    arena = generate_arena(rng, fighter_count=len(list(combatants)))
+    arena = generate_arena(
+        rng, fighter_count=len(list(combatants)), generator=generator,
+    )
     for combatant, (x, y, z) in zip(combatants, arena.start_positions):
         arena.scene.combatant_positions[combatant.id] = Position(x, y, z)
     return arena.scene

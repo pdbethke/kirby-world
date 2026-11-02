@@ -14,6 +14,7 @@ from kirby_world.construct import (
     constructs_containing,
     constructs_in,
 )
+from kirby_world.generate import ArenaGenerator, generate_arena
 from kirby_world.movement_legality import mode_requires_support
 from kirby_world.occupancy import blocked_by_furnishing, position_of
 from kirby_world.scene import (
@@ -32,6 +33,7 @@ from kirby_world.scene import (
 from kirby_world.world import World
 
 __all__ = [
+    "ArenaGenerator",
     "AmbientConditions",
     "Construct",
     "ConstructEffect",
@@ -50,6 +52,7 @@ __all__ = [
     "construct_from_wall",
     "constructs_containing",
     "constructs_in",
+    "generate_arena",
     "is_climbable",
     "mode_requires_support",
     "position_of",
