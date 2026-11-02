@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.2.0
+
+**BREAKING: `generator` is required on `generate_arena` and `arena_for`.** It is
+a keyword-only `ArenaGenerator` with no default; a missing value is a
+`TypeError`, and so is a plain string. Every caller must name one.
+
+- `ArenaGenerator.WALLS_ONLY` is the 0.1.1 generator unchanged, held to a golden
+  (seeds 1-5, 4 and 31 fighters): a stored `scene_seed` rebuilds the same map.
+  A consumer that rebuilds maps from seeds must store the generator beside the
+  seed and pass `WALLS_ONLY` for every existing row.
+- `ArenaGenerator.WITH_COVER` makes the same draws, then places one furnishing
+  per two fighters (at least four): crates, cars, armored cars, concrete
+  barriers and trees, off the starts, hazards and tiers. Same seed, a different
+  map from `WALLS_ONLY`.
+- Needs `kirby-terrain>=0.4.0` for the new Objects Table rows (6E2 p.173).
+- The `Furnishing` error for a missing material no longer says the table
+  "covers walls, doors and glass".
+
 ## 0.1.1
 
 **Long falls take the velocity at impact (6E2 p.142).** `compute_falling_damage`
