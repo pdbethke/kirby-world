@@ -128,6 +128,11 @@ def _surface_cover_for(target: Position, surfaces: list[Surface]) -> int:
     return best
 
 
+#: How close the movement landing must be to the spot to count as arriving, in
+#: metres. `movement_reach` stops a mover short of a blocked point by rounding
+#: and clearance, so exact equality would call every reachable spot unreached.
+LANDING_TOLERANCE_M = 0.01
+
 #: How finely a sight line is walked across a footprint, in metres.
 #: Half a metre is narrower than a person, so nothing man-sized is
 #: stepped over.
@@ -414,7 +419,7 @@ def cover_spots(
             continue
         distance = distance_3d(from_pos, position)
         outcome = movement_reach(mode, from_pos, position, reach_m, scene)
-        arrived = outcome.reachable and distance_3d(outcome.landing, position) < 0.01
+        arrived = outcome.reachable and distance_3d(outcome.landing, position) < LANDING_TOLERANCE_M
         candidate = CoverSpot(
             position=position, feature_id=feature_id, cover_by_threat=levels,
             blocks_los=wall.blocks_los, distance_m=distance,
@@ -429,4 +434,12 @@ def cover_spots(
 
 
 def _spot_order(spot: CoverSpot) -> tuple[int, float]:
+    """RULING: best cover first, then nearest.
+
+    "Best" is the LOWEST cover across the threats --- a spot is only as good
+    as its worst angle, so a place that hides him from one gun and exposes him
+    to another does not outrank one that half-covers both. Distance breaks a
+    tie. The same order decides which edge of a furnishing is kept, because
+    its edges fold to one line.
+    """
     return (-min(spot.cover_by_threat.values()), spot.distance_m)
