@@ -175,6 +175,25 @@ def test_walls_only_rebuilds_the_0_1_1_scene_byte_for_byte():
         assert rebuilt[key] == golden[key], f"{key} no longer matches 0.1.1"
 
 
+def test_with_cover_rebuilds_the_0_2_0_scene_byte_for_byte():
+    """The same contract for WITH_COVER, which every new kirby-api random
+    fight uses: the golden was captured from the 0.2.0 release code before
+    it was published, so any later change to the furnishings (their draw
+    order, kinds, clearances, rounding, overlap test) fails here instead of
+    silently moving furniture under stored fights."""
+    import json
+
+    from tests.arena_golden import build_all, golden_for
+
+    golden = json.loads(golden_for(ArenaGenerator.WITH_COVER).read_text())
+    rebuilt = build_all(lambda rng, n: generate_arena(
+        rng, fighter_count=n, generator=ArenaGenerator.WITH_COVER,
+    ))
+    assert rebuilt.keys() == golden.keys()
+    for key in golden:
+        assert rebuilt[key] == golden[key], f"{key} no longer matches 0.2.0"
+
+
 def _cover_arena(seed: int = 1234, fighters: int = 8):
     return generate_arena(
         random.Random(seed), fighter_count=fighters, generator=ArenaGenerator.WITH_COVER,
