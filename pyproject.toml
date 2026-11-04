@@ -1,6 +1,6 @@
 [project]
 name = "kirby-world"
-version = "0.1.1"
+version = "0.2.0"
 description = "Places for the Kirby HERO System platform: Worlds, Scenes and the geometry inside them"
 requires-python = ">=3.12"
 license = {text = "PolyForm Noncommercial License 1.0.0"}
@@ -9,7 +9,7 @@ authors = [{name = "PeterB"}]
 # One dependency, and it is a leaf: kirby-terrain owns the 6E2 p173 Objects
 # Table a Furnishing's durability is read from. Nothing here imports the fight
 # engine; the fight imports this.
-dependencies = ["kirby-terrain>=0.1.0"]
+dependencies = ["kirby-terrain>=0.4.0"]
 
 [project.urls]
 Repository = "https://github.com/pdbethke/kirby-world"

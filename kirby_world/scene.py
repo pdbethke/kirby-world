@@ -209,8 +209,8 @@ class Furnishing:
     polygon_xy: list[tuple[float, float]]
     height_m: float
     #: Keyed to `kirby_terrain.OBJECT_DURABILITY` (6E2 p.173). None is
-    #: allowed only when the numbers are given outright --- the table is
-    #: walls, doors and glass, and has no row for a wagon or a tree.
+    #: allowed only when the numbers are given outright, for a kind of
+    #: object the table has no row for.
     material: str | None = None
     #: 6E2 p.172: the table is "a baseline the GM should change to fit the
     #: adventure", so an override is the rule and not a hack.
@@ -252,8 +252,8 @@ class Furnishing:
             if missing:
                 raise ValueError(
                     f"{self.id}: no material named, so {', '.join(missing)} "
-                    f"must be given outright --- 6E2 p.173's table covers "
-                    f"walls, doors and glass and has no row for this"
+                    f"must be given outright --- 6E2 p.173's table has no "
+                    f"row for this kind of object"
                 )
         else:
             from kirby_terrain import OBJECT_DURABILITY

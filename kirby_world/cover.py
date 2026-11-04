@@ -29,6 +29,8 @@ Algorithm for ``compute_cover_level`` (scene analysis):
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from kirby_world.geometry import (
     distance_3d,
     first_blocking_wall,
@@ -125,6 +127,11 @@ def _surface_cover_for(target: Position, surfaces: list[Surface]) -> int:
             best = max(best, surf.cover_level)
     return best
 
+
+#: How close the movement landing must be to the spot to count as arriving, in
+#: metres. `movement_reach` stops a mover short of a blocked point by rounding
+#: and clearance, so exact equality would call every reachable spot unreached.
+LANDING_TOLERANCE_M = 0.01
 
 #: How finely a sight line is walked across a footprint, in metres.
 #: Half a metre is narrower than a person, so nothing man-sized is
@@ -346,3 +353,99 @@ def cover_breakdown(
         ) > 0
     )
     return covered, len(threats)
+
+
+@dataclass(frozen=True)
+class CoverSpot:
+    """One place a man can take cover, and what it is worth to him.
+
+    ``feature_id`` is the WALL's id, or the FURNISHING's id for a thing
+    whose four edge walls are one object (`Scene.is_furnishing_edge`); a
+    wagon is one spot, not four planks. ``cover_by_threat`` maps each
+    threat id to the 0-4 level `compute_cover_level` gives at ``position``,
+    because cover is a fact about the target against ONE shooter (6E2 p.45)
+    and a spot that works against the east side may not against the north.
+    """
+    position: Position
+    feature_id: str
+    cover_by_threat: dict[str, int]
+    blocks_los: bool
+    distance_m: float
+    reachable_this_phase: bool
+
+
+def cover_spots(
+    scene: Scene,
+    *,
+    from_pos: Position,
+    threats: dict[str, Position],
+    reach_m: float,
+    mode: str,
+) -> list[CoverSpot]:
+    """Every feature he could take cover behind, best first.
+
+    LIFTED from the two loops that each walked ``scene.walls`` on their own
+    (kirby-combat's Hide check and the Brief's sightings). The spot is
+    `cover_spot` against the NEAREST threat, as `cover_available` places
+    it; the level is then computed there against EVERY threat.
+
+    A spot that shields him from nobody is left out. One he cannot reach
+    this Phase is KEPT and marked, because a chooser plans a two-Phase
+    move toward cover as readily as a one-Phase dive. ``reachable_this_phase``
+    asks `movement_reach` with ``mode`` and ``reach_m`` and requires that he
+    arrive AT the spot, not merely get somewhere along the way.
+
+    Sorted by the LOWEST level across threats (a spot that holds against
+    everyone first), then by distance.
+    """
+    from kirby_world.movement_legality import movement_reach
+
+    if not threats:
+        return []
+    nearest = min(threats.values(), key=lambda t: distance_3d(from_pos, t))
+    best: dict[str, CoverSpot] = {}
+    for wall in scene.walls:
+        owner = wall.part_of if scene.is_furnishing_edge(wall) else None
+        feature_id = owner if owner is not None else wall.id
+        position = cover_spot(wall, nearest)
+        levels = {
+            tid: compute_cover_level(
+                shooter_pos=pos, target_pos=position,
+                target_is_prone_or_diving=False, scene=scene,
+            )
+            for tid, pos in threats.items()
+        }
+        if not any(levels.values()):
+            continue
+        distance = distance_3d(from_pos, position)
+        outcome = movement_reach(mode, from_pos, position, reach_m, scene)
+        arrived = outcome.reachable and distance_3d(outcome.landing, position) < LANDING_TOLERANCE_M
+        candidate = CoverSpot(
+            position=position, feature_id=feature_id, cover_by_threat=levels,
+            blocks_los=wall.blocks_los, distance_m=distance,
+            reachable_this_phase=arrived,
+        )
+        # A furnishing's edges fold to one line: the best cover any edge
+        # offers, nearest on a tie --- the Brief's fold.
+        held = best.get(feature_id)
+        if held is None or _spot_order(candidate) < _spot_order(held):
+            best[feature_id] = candidate
+    return sorted(best.values(), key=_spot_order)
+
+
+def _spot_order(spot: CoverSpot) -> tuple[bool, int, float]:
+    """RULING: cover he can reach this Phase first, then best cover, then nearest.
+
+    A man is better served by cover he can reach this Phase than by better
+    cover he can only plan toward. This also decides which edge of a
+    furnishing is kept: an edge's standoff can land inside the footprint,
+    nearer and unreachable, and the old per-edge loop offered the edge he
+    could walk to --- so the fold must keep that one.
+
+    "Best" is the LOWEST cover across the threats --- a spot is only as good
+    as its worst angle, so a place that hides him from one gun and exposes him
+    to another does not outrank one that half-covers both. Distance breaks a
+    tie.
+    """
+    return (not spot.reachable_this_phase, -min(spot.cover_by_threat.values()),
+            spot.distance_m)

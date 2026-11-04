@@ -15,6 +15,7 @@ import math
 import random
 
 from kirby_world.generate import (
+    ArenaGenerator,
     ArenaUnplaceable,
     _near_segment,
     arena_for,
@@ -24,7 +25,9 @@ from kirby_world.scene import Scene
 
 
 def _arena(seed: int = 1234, fighters: int = 8):
-    return generate_arena(random.Random(seed), fighter_count=fighters)
+    return generate_arena(
+        random.Random(seed), fighter_count=fighters, generator=ArenaGenerator.WALLS_ONLY,
+    )
 
 
 # ---- Deterministic ----
@@ -147,5 +150,116 @@ def test_arena_for_puts_the_combatants_on_the_ground():
         def __init__(self, i):
             self.id = f"f{i}"
 
-    scene = arena_for(random.Random(9), [_C(i) for i in range(4)])
+    scene = arena_for(
+        random.Random(9), [_C(i) for i in range(4)], generator=ArenaGenerator.WALLS_ONLY,
+    )
     assert set(scene.combatant_positions) == {"f0", "f1", "f2", "f3"}
+
+
+# ---- The generator is versioned: old seeds must keep their maps ----
+
+def test_walls_only_rebuilds_the_0_1_1_scene_byte_for_byte():
+    """kirby-api rebuilds every fight's map from its seed on each reload, so
+    a changed generator would silently change old fights' maps. The golden
+    was captured from the unmodified 0.1.1 generator."""
+    import json
+
+    from tests.arena_golden import GOLDEN, build_all
+
+    golden = json.loads(GOLDEN.read_text())
+    rebuilt = build_all(lambda rng, n: generate_arena(
+        rng, fighter_count=n, generator=ArenaGenerator.WALLS_ONLY,
+    ))
+    assert rebuilt.keys() == golden.keys()
+    for key in golden:
+        assert rebuilt[key] == golden[key], f"{key} no longer matches 0.1.1"
+
+
+def test_with_cover_rebuilds_the_0_2_0_scene_byte_for_byte():
+    """The same contract for WITH_COVER, which every new kirby-api random
+    fight uses: the golden was captured from the 0.2.0 release code before
+    it was published, so any later change to the furnishings (their draw
+    order, kinds, clearances, rounding, overlap test) fails here instead of
+    silently moving furniture under stored fights."""
+    import json
+
+    from tests.arena_golden import build_all, golden_for
+
+    golden = json.loads(golden_for(ArenaGenerator.WITH_COVER).read_text())
+    rebuilt = build_all(lambda rng, n: generate_arena(
+        rng, fighter_count=n, generator=ArenaGenerator.WITH_COVER,
+    ))
+    assert rebuilt.keys() == golden.keys()
+    for key in golden:
+        assert rebuilt[key] == golden[key], f"{key} no longer matches 0.2.0"
+
+
+def _cover_arena(seed: int = 1234, fighters: int = 8):
+    return generate_arena(
+        random.Random(seed), fighter_count=fighters, generator=ArenaGenerator.WITH_COVER,
+    )
+
+
+def test_with_cover_places_one_furnishing_per_two_fighters_at_least_four():
+    assert len(_cover_arena(1, 31).scene.furnishings) == 15
+    assert len(_cover_arena(1, 4).scene.furnishings) == 4
+    assert len(_cover_arena(1, 2).scene.furnishings) == 4
+
+
+def test_every_furnishing_material_is_a_table_row():
+    from kirby_terrain import OBJECT_DURABILITY
+
+    for seed in range(20):
+        for f in _cover_arena(seed, 12).scene.furnishings:
+            assert f.material in OBJECT_DURABILITY, f.material
+
+
+def _inside(p, poly):
+    from kirby_world.generate import _in_polygon
+    return _in_polygon(p, poly)
+
+
+def test_no_furnishing_overlaps_a_start_or_a_hazard():
+    for seed in range(30):
+        arena = _cover_arena(seed, 10)
+        for f in arena.scene.furnishings:
+            cx = sum(x for x, _ in f.polygon_xy) / len(f.polygon_xy)
+            cy = sum(y for _, y in f.polygon_xy) / len(f.polygon_xy)
+            for x, y, _z in arena.start_positions:
+                nearest = min(math.dist((x, y), c) for c in [(cx, cy), *f.polygon_xy])
+                assert nearest >= 2.0
+            for hz in arena.scene.hazards:
+                assert not any(_inside(c, hz.polygon_xy) for c in [(cx, cy), *f.polygon_xy])
+                assert not any(_inside(c, f.polygon_xy) for c in hz.polygon_xy)
+
+
+def test_furnishing_ids_are_deterministic_for_a_seed():
+    a, b = _cover_arena(7), _cover_arena(7)
+    assert [f.id for f in a.scene.furnishings] == [f.id for f in b.scene.furnishings]
+    assert [f.polygon_xy for f in a.scene.furnishings] == [f.polygon_xy for f in b.scene.furnishings]
+    assert len({f.id for f in a.scene.furnishings}) == len(a.scene.furnishings)
+
+
+def test_with_cover_keeps_the_walls_only_ground_and_walls():
+    """The cover generator runs the same draws first, then adds."""
+    plain, cover = _arena(5, 8), _cover_arena(5, 8)
+    assert plain.start_positions == cover.start_positions
+    assert [w.id for w in plain.scene.walls] == [
+        w.id for w in cover.scene.walls if w.part_of is None
+    ]
+
+
+def test_missing_generator_is_a_type_error():
+    import pytest
+
+    with pytest.raises(TypeError):
+        generate_arena(random.Random(1), fighter_count=4)  # type: ignore[call-arg]
+    with pytest.raises(TypeError):
+        arena_for(random.Random(1), [])  # type: ignore[call-arg]
+
+
+def test_a_plain_string_generator_is_refused_naming_the_enum():
+    import pytest
+
+    with pytest.raises(TypeError, match="ArenaGenerator"):
+        generate_arena(random.Random(1), fighter_count=4, generator="walls_only")  # type: ignore[arg-type]
