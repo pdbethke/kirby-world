@@ -33,8 +33,8 @@ from kirby_world.scene import (
 from kirby_world.world import World
 
 __all__ = [
-    "ArenaGenerator",
     "AmbientConditions",
+    "ArenaGenerator",
     "Construct",
     "ConstructEffect",
     "Furnishing",
