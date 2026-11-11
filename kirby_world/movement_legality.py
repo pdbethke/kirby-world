@@ -40,6 +40,7 @@ from kirby_world.geometry import (
     point_in_polygon_xy,
     segment_intersection_xy,
     segments_intersect_xy,
+    short_of_the_wall,
     wall_height_blocks,
 )
 from kirby_world.scene import Position, Scene, Wall, is_climbable
@@ -227,8 +228,14 @@ def _running(
         if dist_to_wall <= distance_m + _EPS:
             # Stop just before the wall (clamp to within reach if the wall is
             # farther than we can run anyway).
-            landing = impact if dist_to_wall <= distance_m else \
-                _clamp_xy_toward(from_pos, impact, distance_m)
+            # On HIS side of the face, not on its line (see
+            # `geometry.short_of_the_wall`).
+            if dist_to_wall <= distance_m:
+                sx, sy = short_of_the_wall((from_pos.x, from_pos.y),
+                                           (impact.x, impact.y))
+                landing = Position(sx, sy, impact.z, impact.facing)
+            else:
+                landing = _clamp_xy_toward(from_pos, impact, distance_m)
             return MovementOutcome(
                 reachable=False, landing=landing,
                 fall=_maybe_fall(landing, scene, combatant_id),

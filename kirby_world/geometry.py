@@ -1,6 +1,7 @@
 """3D geometry utilities for scene queries."""
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable
 from math import atan2, sqrt
 
@@ -102,6 +103,31 @@ def path_crosses_polygon(
         if segments_intersect_xy(a, b, p1, p2):
             return True
     return False
+
+
+#: How far short of a wall's line a mover it stopped is left, in metres.
+#: NOT A RULE: the rules count whole metres, and a centimetre is finer than
+#: any of them. It exists because a man is a point here (see
+#: `falling.is_supported_at`), and a point ON a wall's line is on neither
+#: side of it --- every sight line to him crosses the wall, so nobody sees
+#: him from either side (Billy Claiborne in the corral, 2026-11-11). Left
+#: this far back he is on the side he came from, where 6E2 p.118 leaves a
+#: man Knocked Back into a wall: "he stops".
+WALL_FACE_CLEARANCE_M = 0.01
+
+
+def short_of_the_wall(
+    start: tuple[float, float], impact: tuple[float, float],
+) -> tuple[float, float]:
+    """Where a mover from ``start`` stops at a wall his path meets at
+    ``impact``: `WALL_FACE_CLEARANCE_M` back along his own path, on his side
+    of the wall --- and never behind where he started."""
+    dx, dy = impact[0] - start[0], impact[1] - start[1]
+    d = math.hypot(dx, dy)
+    if d <= WALL_FACE_CLEARANCE_M:
+        return start
+    back = (d - WALL_FACE_CLEARANCE_M) / d
+    return (start[0] + dx * back, start[1] + dy * back)
 
 
 def segment_intersection_xy(
