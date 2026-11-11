@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1
+
+- **A runner stopped by a wall ends on his side of it, not on its line.** A
+  man is a point here, and a point on a wall's line is on neither side: every
+  sight line to him crossed the wall, so nobody could see him. He now stops
+  `WALL_FACE_CLEARANCE_M` (1 cm, a numerical clearance, not a rule) back along
+  his own path, never behind where he started.
+- New `geometry.short_of_the_wall(start, impact)` and `WALL_FACE_CLEARANCE_M`,
+  so kirby-combat's Knockback stops the same way.
+
 ## 0.2.0
 
 **BREAKING: `generator` is required on `generate_arena` and `arena_for`.** It is
